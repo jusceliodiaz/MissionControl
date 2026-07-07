@@ -13,91 +13,39 @@
   </head>
   <body>
     <div class="shell">
-      <!-- =============== SIDEBAR =============== -->
-      <aside class="side">
-        <div class="side-brand">
-          <div class="logo">MC</div>
-          <div>
-            <div class="side-title">Mission Control</div>
-            <div class="side-sub">
-              cockpit pessoal · board,<br />diário e radar de sinais
-            </div>
-          </div>
-        </div>
-
-        <nav class="side-nav">
+      <!-- =============== TOPBAR =============== -->
+      <header class="topbar">
+        <nav class="tabs-nav">
           <button class="nav-item active" data-view="overview">
             <span class="nav-name">Overview</span>
-            <span class="nav-desc">resumo do cockpit</span>
           </button>
           <button class="nav-item" data-view="board">
             <span class="nav-name">Board</span>
-            <span class="nav-desc">delegar e executar</span>
           </button>
           <button class="nav-item" data-view="radar">
             <span class="nav-name"
               >Radar <span class="nav-badge" id="radarBadge"></span
             ></span>
-            <span class="nav-desc">sinais reais da internet</span>
           </button>
           <button class="nav-item" data-view="agenda">
             <span class="nav-name"
               >Agenda <span class="nav-badge" id="agendaBadge"></span
             ></span>
-            <span class="nav-desc">google calendar + meets</span>
           </button>
         </nav>
 
-        <button id="diaryBtn" class="pill side-diary">✎ Diário de bordo</button>
-        <div class="side-foot" id="clockLine">—</div>
-      </aside>
+        <div class="topbar-right">
+          <button id="diaryBtn" class="pill">✎ Diário de bordo</button>
+          <div class="side-foot" id="clockLine">—</div>
+        </div>
+      </header>
+
+      <p class="date-strip" id="dateLine">—</p>
 
       <!-- =============== MAIN =============== -->
       <main class="main">
         <!-- ============ VIEW: OVERVIEW ============ -->
         <section class="view" id="view-overview">
-          <div class="ov-head">
-            <div>
-              <div class="eyebrow">OVERVIEW</div>
-              <h1 class="hero" id="greeting">
-                Uma visão limpa<br />do que importa agora.
-              </h1>
-              <p class="hero-sub" id="dateLine">—</p>
-            </div>
-            <div class="ov-stats-row">
-              <div class="ov-gauge-card">
-                <svg
-                  id="ovGaugeSvg"
-                  class="gauge-ring"
-                  viewBox="0 0 100 100"
-                ></svg>
-                <div class="ov-gauge-label">
-                  <span class="ov-gauge-pct" id="ovGaugePct">—</span>
-                  <span class="ov-gauge-name">progresso<br />do dia</span>
-                </div>
-              </div>
-              <div class="ov-stats">
-                <div class="stat-card">
-                  <label>A fazer</label><span id="statTodo">0</span>
-                  <div class="stat-spark" id="sparkTodo"></div>
-                </div>
-                <div class="stat-card">
-                  <label>Executando</label><span id="statDoing">0</span>
-                  <div class="stat-spark" id="sparkDoing"></div>
-                </div>
-                <div class="stat-card">
-                  <label>Radar</label><span id="statRadar">0</span>
-                  <div class="stat-spark" id="sparkRadar"></div>
-                </div>
-                <div class="stat-card">
-                  <label>Hoje</label><span id="statMeets">0</span
-                  ><em>reuniões</em>
-                  <div class="stat-spark" id="sparkMeets"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="bento">
             <!-- MÊS -->
             <div class="bento-card b-month">
@@ -156,88 +104,35 @@
               <div class="focus-line" id="ovFocusLine"></div>
             </div>
 
-            <!-- SUGESTÕES -->
-            <div class="bento-card b-sugg">
+            <!-- GOOGLE TRENDS -->
+            <div class="bento-card b-trends">
               <div class="bento-head">
-                <span class="bento-title" style="--bc: var(--amber)"
-                  >✦ Sugestões</span
+                <span class="bento-title" style="--bc: var(--cyan)"
+                  >🔥 Google Trends</span
                 >
-                <button id="shuffleBtn" class="bento-link" title="outras">
-                  ⟳ trocar
-                </button>
+                <span class="panel-dim trends-at" id="trendsAt"></span>
               </div>
-              <div class="sugg-group">
-                <div class="sugg-label">trabalho</div>
-                <div class="suggest-chips" id="suggWork"></div>
-              </div>
-              <div class="sugg-group">
-                <div class="sugg-label">agenda</div>
-                <div class="suggest-chips agenda-chips" id="suggAgenda"></div>
-              </div>
-            </div>
-
-            <!-- SOCIAL -->
-            <div class="bento-card b-social">
-              <div class="bento-head">
-                <span class="bento-title" style="--bc: var(--violet)"
-                  >✧ Instagram & LinkedIn</span
-                >
-              </div>
-              <div class="soc-grid">
-                <div class="soc-block ig">
-                  <div class="soc-name">Instagram</div>
-                  <div class="soc-metric">
-                    <span id="igCount">—</span><em id="igDelta"></em>
-                  </div>
-                  <div class="soc-actions">
-                    <a
-                      class="soc-btn"
-                      id="igOpen"
-                      target="_blank"
-                      rel="noopener"
-                      >perfil</a
-                    >
-                    <a
-                      class="soc-btn"
-                      href="https://www.instagram.com/direct/inbox/"
-                      target="_blank"
-                      rel="noopener"
-                      >DMs</a
-                    >
-                  </div>
-                  <div class="soc-tags" id="igTags"></div>
+              <div class="trends-grid">
+                <div class="trends-col">
+                  <div class="trends-col-head">Brasil</div>
+                  <div class="trends-list" id="trendsBrasil"></div>
                 </div>
-                <div class="soc-block li">
-                  <div class="soc-name">LinkedIn</div>
-                  <div class="soc-metric">
-                    <span id="liCount">—</span><em id="liDelta"></em>
-                  </div>
-                  <div class="soc-actions">
-                    <a
-                      class="soc-btn"
-                      id="liOpen"
-                      target="_blank"
-                      rel="noopener"
-                      >perfil</a
-                    >
-                    <a
-                      class="soc-btn"
-                      href="https://www.linkedin.com/feed/?shareActive=true"
-                      target="_blank"
-                      rel="noopener"
-                      >criar post</a
-                    >
-                  </div>
-                  <div class="soc-tags" id="liTags"></div>
+                <div class="trends-col">
+                  <div class="trends-col-head">Alemanha</div>
+                  <div class="trends-list" id="trendsAlemanha"></div>
                 </div>
-              </div>
-              <div class="soc-log">
-                <span id="socPosts"
-                  >0 posts de conteúdo concluídos em 7 dias</span
-                >
-                <button id="socLogBtn" class="bento-link">
-                  registrar números →
-                </button>
+                <div class="trends-col">
+                  <div class="trends-col-head">Portugal</div>
+                  <div class="trends-list" id="trendsPortugal"></div>
+                </div>
+                <div class="trends-col">
+                  <div class="trends-col-head">Espanha</div>
+                  <div class="trends-list" id="trendsEspanha"></div>
+                </div>
+                <div class="trends-col">
+                  <div class="trends-col-head">Reino Unido</div>
+                  <div class="trends-list" id="trendsUk"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -251,6 +146,19 @@
               <h2>Delegar & executar</h2>
             </div>
           </div>
+
+          <div class="project-brief">
+            <input
+              type="text"
+              id="projectInput"
+              placeholder="Descreva um projeto (ex: cena de Unreal Engine, vídeo institucional, automação Home Assistant)…"
+            />
+            <button id="projectSuggestBtn" class="pill glow">
+              ✨ Sugerir cards
+            </button>
+          </div>
+          <div class="project-suggestions" id="projectSuggestions"></div>
+
           <div class="board" id="board"></div>
         </section>
 
@@ -373,44 +281,6 @@
           </details>
         </section>
       </main>
-    </div>
-
-    <!-- ============ MODAL SOCIAL ============ -->
-    <div class="overlay hidden" id="socOverlay">
-      <div class="modal task-modal">
-        <header class="modal-head">
-          <h2>Registrar números</h2>
-          <button class="icon-btn close" data-close="socOverlay">✕</button>
-        </header>
-        <div class="modal-body">
-          <label class="diary-note-label">usuário do Instagram (sem @)</label>
-          <input type="text" id="socIgUser" placeholder="seuperfil" />
-          <label class="diary-note-label mt">URL do seu perfil LinkedIn</label>
-          <input
-            type="text"
-            id="socLiUser"
-            placeholder="https://www.linkedin.com/in/voce/"
-          />
-          <div class="task-opts mt">
-            <input
-              type="number"
-              id="socIgN"
-              placeholder="seguidores IG"
-              min="0"
-            />
-            <input
-              type="number"
-              id="socLiN"
-              placeholder="conexões LinkedIn"
-              min="0"
-            />
-          </div>
-          <button id="socSave" class="pill glow wide mt">
-            salvar registro de hoje
-          </button>
-          <div id="socHistory" class="soc-history"></div>
-        </div>
-      </div>
     </div>
 
     <!-- ============ MODAL CRIAR EVENTO ============ -->
@@ -536,6 +406,7 @@
     <script src="report.js"></script>
     <script src="radar.js"></script>
     <script src="calendar.js"></script>
+    <script src="trends.js"></script>
     <script src="dashboard.js"></script>
   </body>
 </html>

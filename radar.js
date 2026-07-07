@@ -2,16 +2,16 @@
    Mission Control — radar.js
    Busca DADOS REAIS na internet para o Radar IA:
      · Hacker News (hn.algolia.com — API pública, sem chave)
-     · Reddit (JSON público: r/artificial, r/LocalLLaMA, r/unrealengine, r/vfx)
-     · Remotive + RemoteOK (APIs públicas de vagas remotas)
+     · Reddit (JSON público)
    Cada fonte falha de forma independente — o radar mostra o que conseguir.
    ===================================================================== */
 
 const RADAR_CATS = {
-  modelos:     { label: "Modelos & IA",      color: "cyan" },
-  ferramentas: { label: "Ferramentas & 3D",  color: "violet" },
-  mercado:     { label: "Mercado",           color: "amber" },
-  vagas:       { label: "Vagas Europa",      color: "magenta" },
+  modelos:       { label: "Modelos & IA",       color: "cyan" },
+  ferramentas:   { label: "Ferramentas & 3D",   color: "violet" },
+  mercado:       { label: "Mercado",            color: "amber" },
+  homeassistant: { label: "Home Assistant",     color: "green" },
+  negocios:      { label: "Negócios & Empreendedorismo", color: "red" },
 };
 
 /* ------------------- helpers ------------------- */
@@ -72,43 +72,6 @@ async function srcReddit(sub, cat, limit = 8) {
     }));
 }
 
-// Remotive — vagas remotas (API pública)
-const EURO_RX = /europe|european|EU only|EMEA|worldwide|anywhere|portugal|spain|germany|france|netherlands|poland|uk|united kingdom|italy|sweden|denmark|finland|estonia|czech|austria|belgium|ireland/i;
-
-async function srcRemotive(search) {
-  const u = "https://remotive.com/api/remote-jobs?limit=20&search=" +
-            encodeURIComponent(search);
-  const data = await jfetch(u);
-  return (data.jobs || [])
-    .filter((j) => EURO_RX.test(j.candidate_required_location || "worldwide"))
-    .slice(0, 6)
-    .map((j) => mkItem({
-      title: j.title + " · " + j.company_name,
-      url: j.url,
-      source: "Remotive",
-      cat: "vagas",
-      ts: Date.parse(j.publication_date) || Date.now(),
-      extra: j.candidate_required_location || "",
-    }));
-}
-
-// RemoteOK — vagas remotas (API pública)
-async function srcRemoteOK(tag) {
-  const data = await jfetch("https://remoteok.com/api?tag=" + encodeURIComponent(tag));
-  return (Array.isArray(data) ? data : [])
-    .filter((j) => j && j.position)
-    .filter((j) => EURO_RX.test((j.location || "") + " worldwide"))
-    .slice(0, 5)
-    .map((j) => mkItem({
-      title: j.position + " · " + (j.company || ""),
-      url: j.url || ("https://remoteok.com/remote-jobs/" + j.id),
-      source: "RemoteOK",
-      cat: "vagas",
-      ts: Date.parse(j.date) || Date.now(),
-      extra: j.location || "",
-    }));
-}
-
 /* ------------------- orquestração ------------------- */
 
 async function fetchRadar() {
@@ -127,10 +90,13 @@ async function fetchRadar() {
     srcHN("funding round", "mercado", 30),
     srcReddit("startups", "mercado", 6),
 
-    srcRemotive("unreal engine"),
-    srcRemotive("3d artist"),
-    srcRemotive("houdini"),
-    srcRemoteOK("3d"),
+    srcHN("Home Assistant", "homeassistant", 10),
+    srcReddit("homeassistant", "homeassistant"),
+
+    srcHN("bootstrapped startup", "negocios", 15),
+    srcHN("startup Europe visa", "negocios", 5),
+    srcReddit("Entrepreneur", "negocios"),
+    srcReddit("smallbusiness", "negocios"),
   ];
 
   const settled = await Promise.allSettled(plan);

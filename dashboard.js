@@ -40,7 +40,7 @@ const DEFAULTS = {
   agendaAt: null,
   agendaWinStart: null,
   agendaWinEnd: null,
-  social: { igUser: "", liUser: "", log: [] },
+  trends: { brasil: [], alemanha: [], portugal: [], espanha: [], uk: [], at: null },
 };
 
 let state = null;
@@ -78,6 +78,80 @@ const SUGG_WORK = [
   { t: "Backup dos projetos da semana", tag: "trabalho" },
 ];
 
+/* regras de sugestão de cards por tipo de projeto (casamento por palavra-chave, sem IA externa) */
+const PROJECT_RULES = [
+  { rx: /unreal|ue4|ue5|\bue\b|cinematic|cutscene/i, tag: "trabalho", tasks: [
+    "Criar/ajustar materiais", "Criar texturas", "Otimizar assets (LODs/Nanite)",
+    "Configurar iluminação (Lumen/Lightmass)", "Configurar colisões",
+    "Configurar pós-processamento", "Renderizar sequência (Movie Render Queue)",
+    "Revisar performance (profiling)",
+  ] },
+  { rx: /houdini|procedural|vex/i, tag: "trabalho", tasks: [
+    "Criar rede procedural (VEX/wrangle)", "Configurar simulação/cache",
+    "Exportar para Unreal/Maya", "Otimizar tempo de cook",
+  ] },
+  { rx: /archviz|arquitetura|visualiza[cç][aã]o|datasmith|corona|3ds ?max/i, tag: "trabalho", tasks: [
+    "Importar modelo (Datasmith)", "Configurar materiais PBR",
+    "Setup de iluminação HDRI", "Criar câmeras/percurso",
+    "Renderizar imagens finais", "Revisar escala e proporções",
+  ] },
+  { rx: /v[ií]deo|edi[cç][aã]o|motion|corte/i, tag: "conteudo", tasks: [
+    "Criar roteiro/storyboard", "Editar corte bruto", "Corrigir cor",
+    "Adicionar trilha sonora", "Exportar em múltiplos formatos",
+  ] },
+  { rx: /site|landing|web ?app|next\.?js|react/i, tag: "empresa", tasks: [
+    "Definir wireframe", "Criar identidade visual", "Implementar responsivo",
+    "Testar em múltiplos dispositivos", "Configurar deploy",
+  ] },
+  { rx: /curso|aula|treinamento|conte[uú]do educ/i, tag: "conteudo", tasks: [
+    "Criar roteiro da aula", "Gravar tela/câmera", "Editar vídeo",
+    "Criar material de apoio", "Publicar e divulgar",
+  ] },
+  { rx: /home ?assistant|automa[cç][aã]o resid|smart ?home/i, tag: "pessoal", tasks: [
+    "Mapear dispositivos", "Criar automação (trigger/ação)",
+    "Configurar dashboard", "Testar cenários de falha",
+  ] },
+  { rx: /empresa|startup|neg[oó]cio|empreend/i, tag: "empresa", tasks: [
+    "Validar proposta de valor", "Mapear concorrentes", "Definir MVP",
+    "Buscar clientes-piloto", "Registrar empresa/jurídico",
+  ] },
+];
+
+const PROJECT_GENERIC_TASKS = [
+  "Definir escopo e prazo", "Levantar referências", "Criar rascunho/protótipo",
+  "Revisar com stakeholder", "Entregar versão final",
+];
+
+function matchProjectTasks(text) {
+  const matched = PROJECT_RULES.filter((r) => r.rx.test(text));
+  if (matched.length === 0) return PROJECT_GENERIC_TASKS.map((t) => ({ t, tag: "trabalho" }));
+  const seen = new Set();
+  const out = [];
+  for (const r of matched) for (const t of r.tasks) {
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push({ t, tag: r.tag });
+  }
+  return out;
+}
+
+function renderProjectSuggestions(items) {
+  const wrap = $("projectSuggestions");
+  wrap.innerHTML = "";
+  for (const { t, tag } of items) {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = t;
+    b.addEventListener("click", async () => {
+      if (b.classList.contains("added")) return;
+      await addTask(t, tag, "normal", "backlog");
+      b.classList.add("added");
+      b.textContent = "✓ " + t;
+    });
+    wrap.appendChild(b);
+  }
+}
+
 const SUGG_AGENDA = [
   { t: "Bloco de foco profundo (2h sem interrupção)", s: "09:00", e: "11:00" },
   { t: "Revisão semanal de projetos", s: "17:00", e: "17:45" },
@@ -88,8 +162,6 @@ const SUGG_AGENDA = [
   { t: "Revisar candidaturas de vagas na Europa", s: "18:00", e: "18:30" },
 ];
 
-const DEFAULTS_SOCIAL = { igUser: "", liUser: "", log: [] }; // log: {date, ig, li}
-
 /* =====================================================================
    NAVEGAÇÃO
    ===================================================================== */
@@ -98,9 +170,10 @@ function gotoView(v) {
   $("view-" + v).classList.remove("hidden");
   document.querySelectorAll(".nav-item").forEach((n) =>
     n.classList.toggle("active", n.dataset.view === v));
+  window.scrollTo(0, 0);
   if (v === "radar") renderRadar();
   if (v === "agenda") renderAgenda();
-  if (v === "overview") renderOverview();
+  if (v === "overview") { renderOverview(); updateTrends(); }
   if (v === "board") renderBoard();
 }
 
@@ -109,25 +182,15 @@ function gotoView(v) {
    ===================================================================== */
 function renderOverview() {
   const now = new Date();
-  const h = now.getHours();
-  const saud = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
-  $("greeting").innerHTML = `${saud}.<br>O que importa agora.`;
   $("dateLine").textContent = now.toLocaleDateString("pt-BR", {
     weekday: "long", day: "2-digit", month: "long", year: "numeric",
   });
-
-  const t = state.tasks;
-  $("statTodo").textContent  = t.filter((x) => x.col === "today" || x.col === "backlog").length;
-  $("statDoing").textContent = t.filter((x) => x.col === "doing").length;
-  $("statRadar").textContent = visibleRadarItems().length;
 
   renderOvAgenda();
   renderOvRadar();
   renderOvBoard();
   renderSuggestions();
-  renderOvSocial();
-  renderOvGauge();
-  renderStatSparks();
+  renderOvTrends();
   renderOvMonth();
 }
 
@@ -179,65 +242,6 @@ function renderOvMonth() {
   }
 }
 
-/* ---- gauge circular: progresso do dia ---- */
-function renderOvGauge() {
-  const t = state.tasks;
-  const activeToday = t.filter((x) => x.col === "today" || x.col === "doing").length;
-  const doneToday = t.filter((x) => x.doneAt === todayISO()).length;
-  const total = activeToday + doneToday;
-  const pct = total === 0 ? 0 : Math.round((doneToday / total) * 100);
-
-  const r = 42, C = 2 * Math.PI * r;
-  const offset = C * (1 - pct / 100);
-  const color = pct >= 75 ? "var(--green)" : pct >= 40 ? "var(--cyan)" : "var(--amber)";
-
-  $("ovGaugeSvg").innerHTML = `
-    <circle class="track" cx="50" cy="50" r="${r}" />
-    <circle class="fill" cx="50" cy="50" r="${r}" stroke="${color}"
-      stroke-dasharray="${C}" stroke-dashoffset="${offset}" />`;
-  $("ovGaugePct").textContent = total === 0 ? "—" : pct + "%";
-}
-
-/* ---- mini-gráficos SVG dos stat-cards ---- */
-function barsSVG(values, colors) {
-  const max = Math.max(1, ...values);
-  const n = values.length;
-  const gap = 4, w = 100 / n;
-  const bars = values.map((v, i) => {
-    const h = Math.max(2, (v / max) * 22);
-    const x = i * w + gap / 2;
-    const bw = w - gap;
-    return `<rect x="${x}" y="${22 - h}" width="${bw}" height="${h}" rx="1.5" fill="${colors[i % colors.length]}" opacity="${v === 0 ? .25 : 1}" />`;
-  }).join("");
-  return `<svg viewBox="0 0 100 22" preserveAspectRatio="none">${bars}</svg>`;
-}
-
-function renderStatSparks() {
-  const t = state.tasks;
-  $("sparkTodo").innerHTML = barsSVG(
-    [t.filter((x) => x.col === "backlog").length, t.filter((x) => x.col === "today").length],
-    ["var(--violet)", "var(--cyan)"]);
-
-  const doing = t.filter((x) => x.col === "doing").length;
-  const activeTotal = t.filter((x) => x.col !== "done").length;
-  $("sparkDoing").innerHTML = barsSVG(
-    [Math.max(0, activeTotal - doing), doing],
-    ["var(--line)", "var(--amber)"]);
-
-  const items = visibleRadarItems();
-  $("sparkRadar").innerHTML = barsSVG(
-    Object.keys(RADAR_CATS).map((cat) => items.filter((i) => i.cat === cat).length),
-    ["var(--cyan)", "var(--violet)", "var(--amber)", "var(--magenta)"]);
-
-  const days = [...Array(7)].map((_, i) => {
-    const d = new Date(); d.setDate(d.getDate() + i);
-    return d.toDateString();
-  });
-  const perDay = days.map((ds) =>
-    (state.agendaEvents || []).filter((e) => new Date(e.start).toDateString() === ds).length);
-  $("sparkMeets").innerHTML = barsSVG(perDay, ["var(--green)"]);
-}
-
 const miniEmpty = (txt) => `<div class="mini-empty">${txt}</div>`;
 
 /* ---- agenda mini: hoje + próximos ---- */
@@ -248,10 +252,6 @@ function renderOvAgenda() {
     .filter((e) => e.end > now - 3600000)     // do agora em diante (tolerância 1h)
     .sort((a, b) => a.start - b.start)
     .slice(0, 5);
-
-  const todayMeets = (state.agendaEvents || []).filter((e) =>
-    new Date(e.start).toDateString() === new Date().toDateString());
-  $("statMeets").textContent = todayMeets.length;
 
   if (evs.length === 0) {
     wrap.innerHTML = miniEmpty(state.calendars.length === 0
@@ -289,7 +289,6 @@ const radarPoints = (it) => {
 function renderOvRadar() {
   const wrap = $("ovRadar");
   const items = visibleRadarItems()
-    .filter((it) => it.cat !== "vagas")
     .sort((a, b) => radarPoints(b) - radarPoints(a))
     .slice(0, 5);
 
@@ -298,7 +297,8 @@ function renderOvRadar() {
     return;
   }
   const catColor = { modelos: "var(--cyan)", ferramentas: "var(--violet)",
-                     mercado: "var(--amber)", vagas: "var(--magenta)" };
+                     mercado: "var(--amber)",
+                     homeassistant: "var(--green)", negocios: "var(--red)" };
   wrap.innerHTML = "";
   for (const it of items) {
     const div = document.createElement("div");
@@ -378,81 +378,51 @@ function renderSuggestions() {
   }
 }
 
-/* ---- social: instagram & linkedin ---- */
-const IG_HASHTAGS = ["houdini", "unrealengine", "homeassistant", "drone"];
+/* ---- google trends ---- */
+async function updateTrends() {
+  let errors = [];
+  try {
+    const res = await fetchAllTrends();
+    state.trends = {
+      brasil: res.brasil, alemanha: res.alemanha, portugal: res.portugal,
+      espanha: res.espanha, uk: res.uk, at: res.at,
+    };
+    errors = res.errors || [];
+    if (errors.length) console.error("Falhas ao buscar Google Trends:", errors);
+    await store.set({ trends: state.trends });
+  } catch (e) {
+    console.error("Falha ao atualizar trends:", e);
+    errors = [String(e)];
+  }
+  renderOvTrends(errors);
+}
 
-function renderOvSocial() {
-  const soc = state.social || { igUser: "", liUser: "", log: [] };
-  $("igOpen").href = soc.igUser
-    ? "https://www.instagram.com/" + encodeURIComponent(soc.igUser) + "/"
-    : "https://www.instagram.com/";
-  $("liOpen").href = soc.liUser || "https://www.linkedin.com/feed/";
+function renderOvTrends(errors) {
+  const tr = state.trends || {};
+  $("trendsAt").textContent = tr.at ? "atualizado " + new Date(tr.at).toLocaleTimeString("pt-BR") : "";
 
-  $("igTags").innerHTML = IG_HASHTAGS.map((tag) =>
-    `<a class="soc-tag" href="https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/" target="_blank" rel="noopener">#${tag}</a>`
-  ).join("");
-  $("liTags").innerHTML = IG_HASHTAGS.map((tag) =>
-    `<a class="soc-tag li" href="https://www.linkedin.com/feed/hashtag/${encodeURIComponent(tag)}/" target="_blank" rel="noopener">#${tag}</a>`
-  ).join("");
+  const emptyMsg = errors && errors.length
+    ? "falha ao buscar (veja o console) — " + errors[0]
+    : "sem dados no momento";
 
-  const log = [...(soc.log || [])].sort((a, b) => a.date.localeCompare(b.date));
-  const last = log[log.length - 1];
-  const prev = log[log.length - 2];
-
-  const setMetric = (spanId, deltaId, key) => {
-    const span = $(spanId), em = $(deltaId);
-    if (!last || last[key] == null) { span.textContent = "—"; em.textContent = ""; return; }
-    span.textContent = Number(last[key]).toLocaleString("pt-BR");
-    if (prev && prev[key] != null) {
-      const d = last[key] - prev[key];
-      em.textContent = (d >= 0 ? "+" : "") + d.toLocaleString("pt-BR");
-      em.classList.toggle("down", d < 0);
-    } else em.textContent = "";
+  const renderList = (elId, items) => {
+    const wrap = $(elId);
+    if (!items || items.length === 0) {
+      wrap.innerHTML = miniEmpty(emptyMsg);
+      return;
+    }
+    wrap.innerHTML = items.map((it, i) => `
+      <div class="trend-item">
+        <span class="trend-rank">${i + 1}</span>
+        <a href="${encodeURI(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
+        ${it.traffic ? `<span class="trend-traffic">${escapeHtml(it.traffic)}</span>` : ""}
+      </div>`).join("");
   };
-  setMetric("igCount", "igDelta", "ig");
-  setMetric("liCount", "liDelta", "li");
-
-  // posts de conteúdo concluídos nos últimos 7 dias
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-  const cutISO = cutoff.toISOString().slice(0, 10);
-  const posts = state.tasks.filter((t) =>
-    t.tag === "conteudo" && t.doneAt && t.doneAt >= cutISO).length;
-  $("socPosts").textContent = `${posts} post(s) de conteúdo concluídos em 7 dias`;
-}
-
-function openSocialModal() {
-  const soc = state.social || { igUser: "", liUser: "", log: [] };
-  $("socIgUser").value = soc.igUser || "";
-  $("socLiUser").value = soc.liUser || "";
-  $("socIgN").value = ""; $("socLiN").value = "";
-
-  const hist = $("socHistory");
-  hist.innerHTML = "";
-  for (const r of [...(soc.log || [])].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8)) {
-    const d = document.createElement("div");
-    d.className = "soc-hist-row";
-    d.innerHTML = `<span>${fmtBR(r.date)}</span>
-      <span>IG <b>${r.ig ?? "—"}</b></span>
-      <span>LI <b>${r.li ?? "—"}</b></span>`;
-    hist.appendChild(d);
-  }
-  $("socOverlay").classList.remove("hidden");
-}
-
-async function saveSocial() {
-  const soc = state.social || { igUser: "", liUser: "", log: [] };
-  soc.igUser = $("socIgUser").value.trim().replace(/^@/, "");
-  soc.liUser = $("socLiUser").value.trim();
-  const ig = $("socIgN").value !== "" ? +$("socIgN").value : null;
-  const li = $("socLiN").value !== "" ? +$("socLiN").value : null;
-  if (ig != null || li != null) {
-    soc.log = (soc.log || []).filter((r) => r.date !== todayISO());
-    soc.log.push({ date: todayISO(), ig, li });
-  }
-  state.social = soc;
-  await store.set({ social: soc });
-  $("socOverlay").classList.add("hidden");
-  renderOvSocial();
+  renderList("trendsBrasil", tr.brasil);
+  renderList("trendsAlemanha", tr.alemanha);
+  renderList("trendsPortugal", tr.portugal);
+  renderList("trendsEspanha", tr.espanha);
+  renderList("trendsUk", tr.uk);
 }
 
 /* =====================================================================
@@ -647,7 +617,7 @@ async function updateRadar() {
   const btn = $("radarUpdate");
   btn.disabled = true;
   btn.textContent = "⟳ buscando fontes reais…";
-  $("radarStatus").textContent = "consultando Hacker News, Reddit, Remotive e RemoteOK…";
+  $("radarStatus").textContent = "consultando Hacker News e Reddit…";
 
   try {
     const { items, errors, at } = await fetchRadar();
@@ -917,7 +887,8 @@ function renderAgenda() {
   const list = $("agendaList");
   list.innerHTML = "";
 
-  const evs = state.agendaEvents || [];
+  const allEvs = state.agendaEvents || [];
+  const evs = allEvs.filter((e) => e.end >= Date.now());
   const todayCount = evs.filter((e) =>
     new Date(e.start).toDateString() === new Date().toDateString()).length;
   $("agendaBadge").textContent = todayCount || "";
@@ -948,7 +919,6 @@ function renderAgenda() {
   }
 
   const todayStr = new Date().toDateString();
-  let scrollTarget = null;
 
   for (const key of Object.keys(byDay).sort()) {
     const label = key.split("|")[1];
@@ -963,9 +933,8 @@ function renderAgenda() {
     wrap.appendChild(head);
 
     for (const e of byDay[key].sort((a, b) => a.start - b.start)) {
-      const past = e.end < Date.now();
       const div = document.createElement("div");
-      div.className = "ag-ev" + (past ? " past" : "");
+      div.className = "ag-ev";
       div.style.setProperty("--evc", e.calColor || "#5eead4");
       div.innerHTML = `
         <span class="ag-time">${e.allDay ? "dia todo" : fmtTime(e.start) + "–" + fmtTime(e.end)}</span>
@@ -977,8 +946,7 @@ function renderAgenda() {
           </div>
         </div>
         ${e.meet ? `
-          <a class="ag-meet" href="${encodeURI(e.meet)}" target="_blank" rel="noopener">
-            ${past ? "link" : "▶ entrar"}</a>
+          <a class="ag-meet" href="${encodeURI(e.meet)}" target="_blank" rel="noopener">▶ entrar</a>
           <button class="ag-copy" title="copiar link do Meet">⧉</button>` : ""}`;
       const copyBtn = div.querySelector(".ag-copy");
       if (copyBtn) copyBtn.addEventListener("click", () => {
@@ -989,11 +957,7 @@ function renderAgenda() {
       wrap.appendChild(div);
     }
     list.appendChild(wrap);
-    if (isToday) scrollTarget = head;
   }
-
-  if (scrollTarget) setTimeout(() =>
-    scrollTarget.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 }
 
 function renderCalList() {
@@ -1151,9 +1115,13 @@ function wireEvents() {
   $("taskTitle").addEventListener("keydown", (e) => { if (e.key === "Enter") saveTaskFromModal(); });
   $("shuffleBtn").addEventListener("click", renderSuggestions);
 
-  // social
-  $("socLogBtn").addEventListener("click", openSocialModal);
-  $("socSave").addEventListener("click", saveSocial);
+  const suggestForProject = () => {
+    const text = $("projectInput").value.trim();
+    if (!text) return;
+    renderProjectSuggestions(matchProjectTasks(text));
+  };
+  $("projectSuggestBtn").addEventListener("click", suggestForProject);
+  $("projectInput").addEventListener("keydown", (e) => { if (e.key === "Enter") suggestForProject(); });
 
   // imagem de registro
   $("imgInput").addEventListener("change", async (e) => {
@@ -1223,6 +1191,7 @@ async function saveTaskFromModal() {
   renderOverview();
   renderBoard();
   renderRadar();
+  updateTrends();
 
   // radar velho (>12h)? já dispara uma atualização automática ao abrir
   if (!state.radarAt || Date.now() - state.radarAt > 12 * 3.6e6) updateRadar();

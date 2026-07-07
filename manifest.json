@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Mission Control — Diário de Tarefas + Radar IA",
-  "description": "Cockpit pessoal: board kanban, diário de missões e Radar IA com dados reais da internet (Hacker News, Reddit, vagas remotas) atualizáveis com um clique.",
+  "description": "Cockpit pessoal: board kanban, diário de missões e Radar IA com dados reais da internet (Hacker News, Reddit) atualizáveis com um clique.",
   "version": "2.0.0",
   "permissions": ["storage", "unlimitedStorage"],
   "host_permissions": [
     "https://hn.algolia.com/*",
     "https://www.reddit.com/*",
-    "https://remotive.com/*",
-    "https://remoteok.com/*",
+    "https://trends.google.com/*",
     "https://calendar.google.com/*"
   ],
   "background": { "service_worker": "background.js" },
