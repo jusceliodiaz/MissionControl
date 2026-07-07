@@ -151,11 +151,11 @@ body::before {
 /* ---------- bento grid ---------- */
 .bento {
   display: grid; gap: 20px; margin-top: 30px;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(12, 1fr);
   grid-template-areas:
-    "month  month  radar radar board board"
-    "month  month  agenda agenda sugg sugg"
-    "social social social social social social";
+    "month  month  month  month  month  month  radar  radar  radar  board  board  board"
+    "month  month  month  month  month  month  agenda agenda agenda sugg   sugg   sugg"
+    "social social social social social social social social social social social social";
 }
 @media (max-width: 1250px) {
   .bento { grid-template-columns: 1fr 1fr;
@@ -178,17 +178,31 @@ body::before {
   font-family: var(--mono); font-size: 9px; letter-spacing: .05em; text-transform: uppercase;
   color: var(--ink-dim); text-align: center; margin-bottom: 4px;
 }
-.ovm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.ovm-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(74px, auto); gap: 5px; }
 .ovm-cell {
-  aspect-ratio: 1; border-radius: 8px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
-  transition: background .15s, color .15s;
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 5px 6px; cursor: pointer;
+  background: rgba(11,14,23,.35);
+  transition: border-color .15s, background .15s;
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
 }
-.ovm-cell:hover { background: var(--panel-2); color: var(--ink); }
-.ovm-cell.out { opacity: .3; }
-.ovm-cell.today { background: rgba(94,234,212,.12); color: var(--cyan); font-weight: 700; }
-.ovm-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--magenta); }
+.ovm-cell:hover { border-color: var(--ink-dim); background: var(--panel-2); }
+.ovm-cell.out { opacity: .35; }
+.ovm-cell.today { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
+.ovm-cell-num { font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); }
+.ovm-cell.today .ovm-cell-num { color: var(--cyan); font-weight: 700; }
+.ovm-cell-evs { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ovm-ev {
+  display: flex; flex-direction: column; gap: 0;
+  border-left: 2px solid var(--evc, var(--cyan)); padding-left: 4px; color: var(--ink);
+  min-width: 0;
+}
+.ovm-ev-time { font-family: var(--mono); font-size: 8px; color: var(--ink-dim); line-height: 1.2; }
+.ovm-ev-title {
+  font-size: 10px; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ovm-ev-more { font-family: var(--mono); font-size: 8.5px; color: var(--ink-dim); padding-left: 4px; }
 
 .bento-card {
   position: relative;
@@ -295,6 +309,16 @@ body::before {
   border-radius: 7px; padding: 5px 10px; transition: all .15s;
 }
 .soc-btn:hover { color: var(--ink); border-color: var(--ink-dim); }
+.soc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.soc-tag {
+  font-family: var(--mono); font-size: 10px; text-decoration: none;
+  color: var(--magenta); background: rgba(244,114,182,.08);
+  border: 1px solid rgba(244,114,182,.3); border-radius: 999px;
+  padding: 3px 9px; transition: all .15s;
+}
+.soc-tag:hover { background: var(--magenta); color: var(--void); border-color: var(--magenta); }
+.soc-tag.li { color: #60a5fa; background: rgba(96,165,250,.08); border-color: rgba(96,165,250,.3); }
+.soc-tag.li:hover { background: #60a5fa; color: var(--void); border-color: #60a5fa; }
 .soc-log {
   margin-top: auto; padding-top: 8px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;

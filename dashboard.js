@@ -154,12 +154,21 @@ function renderOvMonth() {
     const key = d.toDateString();
     const inMonth = d.getMonth() === cursor.getMonth();
     const isToday = key === todayStr;
-    const count = (evsByDay[key] || []).length;
+    const dayEvents = (evsByDay[key] || []).sort((a, b) => a.start - b.start);
+    const shown = dayEvents.slice(0, 2);
+    const more = dayEvents.length - shown.length;
 
     const cell = document.createElement("div");
     cell.className = "ovm-cell" + (inMonth ? "" : " out") + (isToday ? " today" : "");
-    cell.title = count ? `${count} evento(s)` : "";
-    cell.innerHTML = `<span>${d.getDate()}</span>${count ? `<span class="ovm-dot"></span>` : ""}`;
+    cell.innerHTML = `
+      <div class="ovm-cell-num">${d.getDate()}</div>
+      <div class="ovm-cell-evs">
+        ${shown.map((e) => `<div class="ovm-ev" style="--evc:${e.calColor || "var(--cyan)"}">
+          ${e.allDay ? "" : `<span class="ovm-ev-time">${fmtTime(e.start)}</span>`}
+          <span class="ovm-ev-title">${escapeHtml(e.title)}</span>
+        </div>`).join("")}
+        ${more > 0 ? `<div class="ovm-ev-more">+${more}</div>` : ""}
+      </div>`;
     cell.addEventListener("click", () => {
       gotoView("agenda");
       monthCursor = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -370,12 +379,21 @@ function renderSuggestions() {
 }
 
 /* ---- social: instagram & linkedin ---- */
+const IG_HASHTAGS = ["houdini", "unrealengine", "homeassistant", "drone"];
+
 function renderOvSocial() {
   const soc = state.social || { igUser: "", liUser: "", log: [] };
   $("igOpen").href = soc.igUser
     ? "https://www.instagram.com/" + encodeURIComponent(soc.igUser) + "/"
     : "https://www.instagram.com/";
   $("liOpen").href = soc.liUser || "https://www.linkedin.com/feed/";
+
+  $("igTags").innerHTML = IG_HASHTAGS.map((tag) =>
+    `<a class="soc-tag" href="https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/" target="_blank" rel="noopener">#${tag}</a>`
+  ).join("");
+  $("liTags").innerHTML = IG_HASHTAGS.map((tag) =>
+    `<a class="soc-tag li" href="https://www.linkedin.com/feed/hashtag/${encodeURIComponent(tag)}/" target="_blank" rel="noopener">#${tag}</a>`
+  ).join("");
 
   const log = [...(soc.log || [])].sort((a, b) => a.date.localeCompare(b.date));
   const last = log[log.length - 1];
