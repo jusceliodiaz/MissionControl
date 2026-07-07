@@ -62,22 +62,6 @@ const COLS = [
   { id: "done",    title: "Feito",   hint: "missão cumprida" },
 ];
 
-const SUGG_WORK = [
-  { t: "Enviar timesheet do dia", tag: "trabalho" },
-  { t: "Revisar bake de materiais Datasmith → Unreal", tag: "trabalho" },
-  { t: "Atualizar o Radar IA e separar 2 pautas", tag: "conteudo" },
-  { t: "Postar 1 conteúdo sobre IA no LinkedIn/Instagram", tag: "conteudo" },
-  { t: "Gravar 1 aula ou short para o curso", tag: "conteudo" },
-  { t: "Aplicar para 1 vaga Unreal/3D na Europa", tag: "carreira" },
-  { t: "Atualizar portfólio com o último projeto", tag: "carreira" },
-  { t: "Estudar Houdini por 30 minutos", tag: "carreira" },
-  { t: "Comentar em 3 posts de archviz (networking)", tag: "carreira" },
-  { t: "Esboçar pitch da empresa de web explorer 3D", tag: "empresa" },
-  { t: "Mapear 3 clientes-piloto para o web explorer", tag: "empresa" },
-  { t: "Organizar biblioteca de materiais/assets", tag: "trabalho" },
-  { t: "Backup dos projetos da semana", tag: "trabalho" },
-];
-
 /* regras de sugestão de cards por tipo de projeto (casamento por palavra-chave, sem IA externa) */
 const PROJECT_RULES = [
   { rx: /unreal|ue4|ue5|\bue\b|cinematic|cutscene/i, tag: "trabalho", tasks: [
@@ -152,16 +136,6 @@ function renderProjectSuggestions(items) {
   }
 }
 
-const SUGG_AGENDA = [
-  { t: "Bloco de foco profundo (2h sem interrupção)", s: "09:00", e: "11:00" },
-  { t: "Revisão semanal de projetos", s: "17:00", e: "17:45" },
-  { t: "Gravação de aula do curso", s: "14:00", e: "15:30" },
-  { t: "Planejamento de conteúdo da semana", s: "10:00", e: "10:45" },
-  { t: "Call de prospecção — web explorer", s: "15:00", e: "15:30" },
-  { t: "Estudo de Houdini", s: "19:00", e: "19:45" },
-  { t: "Revisar candidaturas de vagas na Europa", s: "18:00", e: "18:30" },
-];
-
 /* =====================================================================
    NAVEGAÇÃO
    ===================================================================== */
@@ -189,7 +163,6 @@ function renderOverview() {
   renderOvAgenda();
   renderOvRadar();
   renderOvBoard();
-  renderSuggestions();
   renderOvTrends();
   renderOvMonth();
 }
@@ -344,38 +317,6 @@ function renderOvBoard() {
   $("ovFocusLine").innerHTML = focus
     ? `foco atual: <b>${escapeHtml(focus.title)}</b> · ${doneToday} concluída(s) hoje`
     : `nada em execução agora · ${doneToday} concluída(s) hoje`;
-}
-
-/* ---- sugestões (trabalho + agenda) ---- */
-function renderSuggestions() {
-  const workWrap = $("suggWork");
-  workWrap.innerHTML = "";
-  const existing = new Set(state.tasks.map((t) => t.title));
-  const pool = SUGG_WORK.filter((s) => !existing.has(s.t));
-  for (const s of pool.sort(() => Math.random() - 0.5).slice(0, 4)) {
-    const b = document.createElement("button");
-    b.className = "chip";
-    b.textContent = s.t;
-    b.addEventListener("click", () => addTask(s.t, s.tag, "normal", "today"));
-    workWrap.appendChild(b);
-  }
-
-  const agWrap = $("suggAgenda");
-  agWrap.innerHTML = "";
-  for (const s of [...SUGG_AGENDA].sort(() => Math.random() - 0.5).slice(0, 3)) {
-    const b = document.createElement("button");
-    b.className = "chip";
-    b.textContent = s.t;
-    b.addEventListener("click", () => {
-      // abre o criador de evento já preenchido
-      $("evTitle").value = s.t;
-      $("evDate").value = todayISO();
-      $("evStart").value = s.s; $("evEnd").value = s.e;
-      fillAccountSelect();
-      $("eventOverlay").classList.remove("hidden");
-    });
-    agWrap.appendChild(b);
-  }
 }
 
 /* ---- google trends ---- */
@@ -1113,7 +1054,6 @@ function wireEvents() {
 
   $("taskSave").addEventListener("click", saveTaskFromModal);
   $("taskTitle").addEventListener("keydown", (e) => { if (e.key === "Enter") saveTaskFromModal(); });
-  $("shuffleBtn").addEventListener("click", renderSuggestions);
 
   const suggestForProject = () => {
     const text = $("projectInput").value.trim();

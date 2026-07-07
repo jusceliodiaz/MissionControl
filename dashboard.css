@@ -118,22 +118,21 @@ body::before {
   grid-template-columns: repeat(12, 1fr);
   grid-template-areas:
     "month  month  month  month  month  month  radar  radar  radar  board  board  board"
-    "month  month  month  month  month  month  agenda agenda agenda sugg   sugg   sugg"
+    "month  month  month  month  month  month  agenda agenda agenda agenda agenda agenda"
     "trends trends trends trends trends trends trends trends trends trends trends trends";
 }
 @media (max-width: 1250px) {
   .bento { grid-template-columns: 1fr 1fr;
-    grid-template-areas: "month month" "radar board" "agenda sugg" "trends trends"; }
+    grid-template-areas: "month month" "radar board" "agenda agenda" "trends trends"; }
 }
 @media (max-width: 760px) {
   .bento { grid-template-columns: 1fr;
-    grid-template-areas: "month" "agenda" "radar" "board" "sugg" "trends"; }
+    grid-template-areas: "month" "agenda" "radar" "board" "trends"; }
 }
 .b-month  { grid-area: month; }
 .b-agenda { grid-area: agenda; }
 .b-radar  { grid-area: radar; }
 .b-board  { grid-area: board; }
-.b-sugg   { grid-area: sugg; }
 .b-trends { grid-area: trends; }
 
 /* mini-calendário do mês na overview */
@@ -232,13 +231,6 @@ body::before {
 }
 .focus-line b { color: var(--amber); }
 
-/* sugestões em grupos */
-.sugg-group { display: flex; flex-direction: column; gap: 7px; }
-.sugg-label {
-  font-family: var(--mono); font-size: 9.5px; letter-spacing: .25em;
-  text-transform: uppercase; color: var(--ink-dim);
-}
-.suggest-chips { display: flex; gap: 7px; flex-wrap: wrap; }
 .chip {
   font-size: 12px; color: var(--ink-dim); background: transparent;
   border: 1px dashed var(--line); border-radius: 999px;
@@ -246,8 +238,6 @@ body::before {
 }
 .chip:hover { color: var(--void); background: var(--cyan); border-color: var(--cyan); border-style: solid; }
 .chip::before { content: "+ "; opacity: .6; }
-.agenda-chips .chip:hover { background: var(--green); border-color: var(--green); }
-.agenda-chips .chip::before { content: "◷ "; }
 
 /* google trends */
 .trends-at { font-size: 10px; }
