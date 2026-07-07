@@ -45,6 +45,7 @@ const DEFAULTS = {
 
 let state = null;
 let radarFilter = "all";
+let moneyGeo = "brasil"; // país selecionado na view Mercados
 let monthCursor = new Date(); monthCursor.setDate(1); monthCursor.setHours(0, 0, 0, 0);
 
 /* ---------------- datas ---------------- */
@@ -149,6 +150,7 @@ function gotoView(v) {
   if (v === "agenda") renderAgenda();
   if (v === "overview") { renderOverview(); updateTrends(); }
   if (v === "board") renderBoard();
+  if (v === "money") { renderMoney(); updateTrends(); }
 }
 
 /* =====================================================================
@@ -336,34 +338,152 @@ async function updateTrends() {
     errors = [String(e)];
   }
   renderOvTrends(errors);
+  renderMoney(errors); // a view Mercados também consome os trends
 }
+
+/* helper compartilhada Overview/Mercados */
+function renderTrendList(elId, items, emptyMsg) {
+  const wrap = $(elId);
+  if (!wrap) return;
+  if (!items || items.length === 0) {
+    wrap.innerHTML = miniEmpty(emptyMsg || "sem dados no momento");
+    return;
+  }
+  wrap.innerHTML = items.map((it, i) => `
+    <div class="trend-item">
+      <span class="trend-rank">${i + 1}</span>
+      <a href="${encodeURI(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
+      ${it.traffic ? `<span class="trend-traffic">${escapeHtml(it.traffic)}</span>` : ""}
+    </div>`).join("");
+}
+
+const trendsEmptyMsg = (errors) => errors && errors.length
+  ? "falha ao buscar (veja o console) — " + errors[0]
+  : "sem dados no momento";
 
 function renderOvTrends(errors) {
   const tr = state.trends || {};
   $("trendsAt").textContent = tr.at ? "atualizado " + new Date(tr.at).toLocaleTimeString("pt-BR") : "";
+  const emptyMsg = trendsEmptyMsg(errors);
+  renderTrendList("trendsBrasil", tr.brasil, emptyMsg);
+  renderTrendList("trendsAlemanha", tr.alemanha, emptyMsg);
+  renderTrendList("trendsPortugal", tr.portugal, emptyMsg);
+  renderTrendList("trendsEspanha", tr.espanha, emptyMsg);
+  renderTrendList("trendsUk", tr.uk, emptyMsg);
+}
 
-  const emptyMsg = errors && errors.length
-    ? "falha ao buscar (veja o console) — " + errors[0]
-    : "sem dados no momento";
+/* =====================================================================
+   MERCADOS — inteligência de negócios por país + trends ao vivo
+   (dados curados + regras em money.js)
+   ===================================================================== */
+function renderMoney(errors) {
+  if (!$("moneyGeos")) return; // view não presente (segurança)
+  renderMoneyGeos();
+  renderMoneyIntel();
+  renderMoneyLive();
+  renderMoneyTrends(errors);
+}
 
-  const renderList = (elId, items) => {
-    const wrap = $(elId);
-    if (!items || items.length === 0) {
-      wrap.innerHTML = miniEmpty(emptyMsg);
-      return;
-    }
-    wrap.innerHTML = items.map((it, i) => `
-      <div class="trend-item">
-        <span class="trend-rank">${i + 1}</span>
-        <a href="${encodeURI(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
-        ${it.traffic ? `<span class="trend-traffic">${escapeHtml(it.traffic)}</span>` : ""}
-      </div>`).join("");
-  };
-  renderList("trendsBrasil", tr.brasil);
-  renderList("trendsAlemanha", tr.alemanha);
-  renderList("trendsPortugal", tr.portugal);
-  renderList("trendsEspanha", tr.espanha);
-  renderList("trendsUk", tr.uk);
+/* chips de seleção de país */
+function renderMoneyGeos() {
+  const wrap = $("moneyGeos");
+  wrap.innerHTML = "";
+  for (const g of MONEY_GEOS) {
+    const b = document.createElement("button");
+    b.className = "geo-chip" + (moneyGeo === g.key ? " sel" : "");
+    b.style.setProperty("--gc", g.color);
+    b.innerHTML = `<span class="geo-flag">${g.flag}</span> ${g.label}`;
+    b.addEventListener("click", () => { moneyGeo = g.key; renderMoney(); });
+    wrap.appendChild(b);
+  }
+}
+
+/* painel curado do país selecionado */
+function renderMoneyIntel() {
+  const g = MONEY_GEOS.find((x) => x.key === moneyGeo);
+  const intel = MONEY_INTEL[moneyGeo];
+  const wrap = $("moneyIntel");
+  if (!intel) { wrap.innerHTML = ""; return; }
+
+  wrap.style.setProperty("--gc", g.color);
+  wrap.innerHTML = `
+    <div class="mi-snapshot">
+      <div class="mi-country">${g.flag} ${g.label}</div>
+      <p>${escapeHtml(intel.snapshot)}</p>
+    </div>
+    <div class="mi-grid">
+      <div class="mi-block">
+        <div class="mi-block-title">◈ Oportunidades de negócio</div>
+        <div class="mi-opps">
+          ${intel.oportunidades.map((o) => `
+            <div class="mi-opp">
+              <h4>${escapeHtml(o.t)}</h4>
+              <p>${escapeHtml(o.d)}</p>
+            </div>`).join("")}
+        </div>
+      </div>
+      <div class="mi-block">
+        <div class="mi-block-title">◆ Ideias de produto <span class="mi-hint">clique para mandar pro board</span></div>
+        <div class="mi-products" id="miProducts"></div>
+        <div class="mi-block-title mt-big">➤ Seu ângulo</div>
+        <p class="mi-angle">${escapeHtml(intel.angulo)}</p>
+      </div>
+    </div>`;
+
+  // ideias de produto viram card no backlog com um clique (tag empresa)
+  const prodWrap = wrap.querySelector("#miProducts");
+  for (const p of intel.produtos) {
+    const title = `[${g.label}] ${p}`;
+    const exists = state.tasks.some((t) => t.title === title);
+    const b = document.createElement("button");
+    b.className = "chip" + (exists ? " added" : "");
+    b.textContent = (exists ? "✓ " : "") + p;
+    b.addEventListener("click", async () => {
+      if (b.classList.contains("added")) return;
+      await addTask(title, "empresa", "normal", "backlog");
+      b.classList.add("added");
+      b.textContent = "✓ " + p;
+    });
+    prodWrap.appendChild(b);
+  }
+}
+
+/* ângulos de monetização detectados nos trends AO VIVO do país */
+function renderMoneyLive() {
+  const g = MONEY_GEOS.find((x) => x.key === moneyGeo);
+  const items = (state.trends || {})[moneyGeo] || [];
+  const grid = $("moneyLiveGrid");
+  $("moneyLiveHint").textContent =
+    `ângulos de monetização cruzando o que está estourando agora em ${g.label}`;
+
+  const matches = matchTrendOpportunities(items);
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="col-empty">sem trends carregados — clique em “⟳ Atualizar trends”</div>`;
+    return;
+  }
+  if (matches.length === 0) {
+    grid.innerHTML = `<div class="col-empty">nenhum padrão monetizável óbvio nos trends de ${g.label} agora — os assuntos do dia estão fora das regras do radar de dinheiro</div>`;
+    return;
+  }
+  grid.innerHTML = matches.map((m) => `
+    <div class="ml-card" style="--mlc:${m.color}">
+      <div class="ml-label">${escapeHtml(m.label)}</div>
+      <div class="ml-hits">${m.hits.slice(0, 3).map((h) => `<span>${escapeHtml(h)}</span>`).join("")}</div>
+      <p>${escapeHtml(m.dica)}</p>
+    </div>`).join("");
+}
+
+/* grid completo de trends dentro da view Mercados */
+function renderMoneyTrends(errors) {
+  const tr = state.trends || {};
+  const at = $("moneyTrendsAt");
+  if (at) at.textContent = tr.at ? "atualizado " + new Date(tr.at).toLocaleTimeString("pt-BR") : "";
+  const emptyMsg = trendsEmptyMsg(errors);
+  renderTrendList("mTrendsBrasil", tr.brasil, emptyMsg);
+  renderTrendList("mTrendsAlemanha", tr.alemanha, emptyMsg);
+  renderTrendList("mTrendsPortugal", tr.portugal, emptyMsg);
+  renderTrendList("mTrendsEspanha", tr.espanha, emptyMsg);
+  renderTrendList("mTrendsUk", tr.uk, emptyMsg);
 }
 
 /* =====================================================================
@@ -1005,6 +1125,14 @@ function wireEvents() {
     ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.add("hidden"); }));
 
   $("radarUpdate").addEventListener("click", updateRadar);
+
+  // mercados
+  $("moneyUpdate").addEventListener("click", async () => {
+    const btn = $("moneyUpdate");
+    btn.disabled = true; btn.textContent = "⟳ buscando trends…";
+    await updateTrends();
+    btn.disabled = false; btn.textContent = "⟳ Atualizar trends";
+  });
 
   // agenda
   $("agendaUpdate").addEventListener("click", () => updateAgenda());

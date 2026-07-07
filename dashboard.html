@@ -32,6 +32,9 @@
               >Agenda <span class="nav-badge" id="agendaBadge"></span
             ></span>
           </button>
+          <button class="nav-item" data-view="money">
+            <span class="nav-name">Mercados</span>
+          </button>
         </nav>
 
         <div class="topbar-right">
@@ -280,6 +283,72 @@
             </div>
           </details>
         </section>
+
+        <!-- ============ VIEW: MERCADOS (💰 + TRENDS) ============ -->
+        <section class="view hidden" id="view-money">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow">MERCADOS</div>
+              <h2>Como ganhar dinheiro por país</h2>
+              <p class="panel-dim" id="moneyStatus">
+                inteligência de negócios + Google Trends ao vivo
+              </p>
+            </div>
+            <button id="moneyUpdate" class="pill glow big">
+              ⟳ Atualizar trends
+            </button>
+          </div>
+
+          <!-- seletor de país -->
+          <div class="money-geos" id="moneyGeos"></div>
+
+          <!-- painel de inteligência do país selecionado -->
+          <div class="money-intel" id="moneyIntel"></div>
+
+          <!-- oportunidades detectadas nos trends AO VIVO -->
+          <div class="money-live">
+            <div class="money-live-head">
+              ⚡ Detectado nos trends de hoje
+              <span class="panel-dim" id="moneyLiveHint"
+                >ângulos de monetização cruzando o que está estourando
+                agora</span
+              >
+            </div>
+            <div class="money-live-grid" id="moneyLiveGrid"></div>
+          </div>
+
+          <!-- google trends completo (todos os países) -->
+          <div class="bento-card b-trends money-trends">
+            <div class="bento-head">
+              <span class="bento-title" style="--bc: var(--cyan)"
+                >🔥 Google Trends · agora</span
+              >
+              <span class="panel-dim trends-at" id="moneyTrendsAt"></span>
+            </div>
+            <div class="trends-grid">
+              <div class="trends-col">
+                <div class="trends-col-head">Brasil</div>
+                <div class="trends-list" id="mTrendsBrasil"></div>
+              </div>
+              <div class="trends-col">
+                <div class="trends-col-head">Alemanha</div>
+                <div class="trends-list" id="mTrendsAlemanha"></div>
+              </div>
+              <div class="trends-col">
+                <div class="trends-col-head">Portugal</div>
+                <div class="trends-list" id="mTrendsPortugal"></div>
+              </div>
+              <div class="trends-col">
+                <div class="trends-col-head">Espanha</div>
+                <div class="trends-list" id="mTrendsEspanha"></div>
+              </div>
+              <div class="trends-col">
+                <div class="trends-col-head">Reino Unido</div>
+                <div class="trends-list" id="mTrendsUk"></div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
@@ -407,6 +476,7 @@
     <script src="radar.js"></script>
     <script src="calendar.js"></script>
     <script src="trends.js"></script>
+    <script src="money.js"></script>
     <script src="dashboard.js"></script>
   </body>
 </html>
