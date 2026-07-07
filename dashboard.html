@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mission Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Sora:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <!-- =============== SIDEBAR =============== -->
+      <aside class="side">
+        <div class="side-brand">
+          <div class="logo">MC</div>
+          <div>
+            <div class="side-title">Mission Control</div>
+            <div class="side-sub">
+              cockpit pessoal · board,<br />diário e radar de sinais
+            </div>
+          </div>
+        </div>
+
+        <nav class="side-nav">
+          <button class="nav-item active" data-view="overview">
+            <span class="nav-name">Overview</span>
+            <span class="nav-desc">resumo do cockpit</span>
+          </button>
+          <button class="nav-item" data-view="board">
+            <span class="nav-name">Board</span>
+            <span class="nav-desc">delegar e executar</span>
+          </button>
+          <button class="nav-item" data-view="radar">
+            <span class="nav-name"
+              >Radar <span class="nav-badge" id="radarBadge"></span
+            ></span>
+            <span class="nav-desc">sinais reais da internet</span>
+          </button>
+          <button class="nav-item" data-view="agenda">
+            <span class="nav-name"
+              >Agenda <span class="nav-badge" id="agendaBadge"></span
+            ></span>
+            <span class="nav-desc">google calendar + meets</span>
+          </button>
+        </nav>
+
+        <button id="diaryBtn" class="pill side-diary">✎ Diário de bordo</button>
+        <div class="side-foot" id="clockLine">—</div>
+      </aside>
+
+      <!-- =============== MAIN =============== -->
+      <main class="main">
+        <!-- ============ VIEW: OVERVIEW ============ -->
+        <section class="view" id="view-overview">
+          <div class="ov-head">
+            <div>
+              <div class="eyebrow">OVERVIEW</div>
+              <h1 class="hero" id="greeting">
+                Uma visão limpa<br />do que importa agora.
+              </h1>
+              <p class="hero-sub" id="dateLine">—</p>
+            </div>
+            <div class="ov-stats-row">
+              <div class="ov-gauge-card">
+                <svg
+                  id="ovGaugeSvg"
+                  class="gauge-ring"
+                  viewBox="0 0 100 100"
+                ></svg>
+                <div class="ov-gauge-label">
+                  <span class="ov-gauge-pct" id="ovGaugePct">—</span>
+                  <span class="ov-gauge-name">progresso<br />do dia</span>
+                </div>
+              </div>
+              <div class="ov-stats">
+                <div class="stat-card">
+                  <label>A fazer</label><span id="statTodo">0</span>
+                  <div class="stat-spark" id="sparkTodo"></div>
+                </div>
+                <div class="stat-card">
+                  <label>Executando</label><span id="statDoing">0</span>
+                  <div class="stat-spark" id="sparkDoing"></div>
+                </div>
+                <div class="stat-card">
+                  <label>Radar</label><span id="statRadar">0</span>
+                  <div class="stat-spark" id="sparkRadar"></div>
+                </div>
+                <div class="stat-card">
+                  <label>Hoje</label><span id="statMeets">0</span
+                  ><em>reuniões</em>
+                  <div class="stat-spark" id="sparkMeets"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento">
+            <!-- MÊS -->
+            <div class="bento-card b-month">
+              <div class="bento-head">
+                <span class="bento-title" id="ovMonthTitle" style="--bc: var(--cyan)"
+                  >▦ Este mês</span
+                >
+                <button class="bento-link" data-goto="agenda">
+                  ver agenda →
+                </button>
+              </div>
+              <div class="ovm-dow">
+                <span>D</span><span>S</span><span>T</span><span>Q</span
+                ><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div class="ovm-grid" id="ovMonthGrid"></div>
+            </div>
+
+            <!-- AGENDA MINI -->
+            <div class="bento-card b-agenda">
+              <div class="bento-head">
+                <span class="bento-title" style="--bc: var(--green)"
+                  >◷ Agenda</span
+                >
+                <button class="bento-link" data-goto="agenda">
+                  ver tudo →
+                </button>
+              </div>
+              <div class="mini-list" id="ovAgenda"></div>
+            </div>
+
+            <!-- RADAR TOP -->
+            <div class="bento-card b-radar">
+              <div class="bento-head">
+                <span class="bento-title" style="--bc: var(--magenta)"
+                  >◉ Radar · mais avaliados</span
+                >
+                <button class="bento-link" data-goto="radar">
+                  abrir radar →
+                </button>
+              </div>
+              <div class="mini-list" id="ovRadar"></div>
+            </div>
+
+            <!-- BOARD RECENTES -->
+            <div class="bento-card b-board">
+              <div class="bento-head">
+                <span class="bento-title" style="--bc: var(--cyan)"
+                  >⬢ Board · recentes</span
+                >
+                <button class="bento-link" data-goto="board">
+                  abrir board →
+                </button>
+              </div>
+              <div class="mini-list" id="ovBoard"></div>
+              <div class="focus-line" id="ovFocusLine"></div>
+            </div>
+
+            <!-- SUGESTÕES -->
+            <div class="bento-card b-sugg">
+              <div class="bento-head">
+                <span class="bento-title" style="--bc: var(--amber)"
+                  >✦ Sugestões</span
+                >
+                <button id="shuffleBtn" class="bento-link" title="outras">
+                  ⟳ trocar
+                </button>
+              </div>
+              <div class="sugg-group">
+                <div class="sugg-label">trabalho</div>
+                <div class="suggest-chips" id="suggWork"></div>
+              </div>
+              <div class="sugg-group">
+                <div class="sugg-label">agenda</div>
+                <div class="suggest-chips agenda-chips" id="suggAgenda"></div>
+              </div>
+            </div>
+
+            <!-- SOCIAL -->
+            <div class="bento-card b-social">
+              <div class="bento-head">
+                <span class="bento-title" style="--bc: var(--violet)"
+                  >✧ Instagram & LinkedIn</span
+                >
+              </div>
+              <div class="soc-grid">
+                <div class="soc-block ig">
+                  <div class="soc-name">Instagram</div>
+                  <div class="soc-metric">
+                    <span id="igCount">—</span><em id="igDelta"></em>
+                  </div>
+                  <div class="soc-actions">
+                    <a
+                      class="soc-btn"
+                      id="igOpen"
+                      target="_blank"
+                      rel="noopener"
+                      >perfil</a
+                    >
+                    <a
+                      class="soc-btn"
+                      href="https://www.instagram.com/direct/inbox/"
+                      target="_blank"
+                      rel="noopener"
+                      >DMs</a
+                    >
+                  </div>
+                </div>
+                <div class="soc-block li">
+                  <div class="soc-name">LinkedIn</div>
+                  <div class="soc-metric">
+                    <span id="liCount">—</span><em id="liDelta"></em>
+                  </div>
+                  <div class="soc-actions">
+                    <a
+                      class="soc-btn"
+                      id="liOpen"
+                      target="_blank"
+                      rel="noopener"
+                      >perfil</a
+                    >
+                    <a
+                      class="soc-btn"
+                      href="https://www.linkedin.com/feed/?shareActive=true"
+                      target="_blank"
+                      rel="noopener"
+                      >criar post</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="soc-log">
+                <span id="socPosts"
+                  >0 posts de conteúdo concluídos em 7 dias</span
+                >
+                <button id="socLogBtn" class="bento-link">
+                  registrar números →
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ VIEW: BOARD ============ -->
+        <section class="view hidden" id="view-board">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow">BOARD</div>
+              <h2>Delegar & executar</h2>
+            </div>
+          </div>
+          <div class="board" id="board"></div>
+        </section>
+
+        <!-- ============ VIEW: RADAR ============ -->
+        <section class="view hidden" id="view-radar">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow">RADAR IA</div>
+              <h2>Sinais ao vivo</h2>
+              <p class="panel-dim" id="radarStatus">
+                nunca atualizado — clique em atualizar
+              </p>
+            </div>
+            <button id="radarUpdate" class="pill glow big">
+              ⟳ Atualizar radar
+            </button>
+          </div>
+
+          <details class="brief">
+            <summary>
+              ◉ Brief curado do dia <span id="briefDate"></span>
+            </summary>
+            <div id="briefBody" class="brief-body"></div>
+            <div class="brief-paste">
+              <textarea
+                id="pasteText"
+                rows="4"
+                placeholder="Cole aqui um novo brief (peça o relatório do dia ao Claude e cole — fica salvo)"
+              ></textarea>
+              <button id="pasteSave" class="pill">salvar brief</button>
+            </div>
+          </details>
+
+          <div class="radar-filters" id="radarFilters"></div>
+          <div class="radar-feed" id="radarFeed">
+            <div class="col-empty">
+              clique em “⟳ Atualizar radar” para buscar sinais reais da internet
+            </div>
+          </div>
+
+          <details class="used">
+            <summary>
+              ✔ histórico do que já foi aproveitado (<span id="usedCount"
+                >0</span
+              >)
+            </summary>
+            <div id="usedList"></div>
+          </details>
+        </section>
+
+        <!-- ============ VIEW: AGENDA ============ -->
+        <section class="view hidden" id="view-agenda">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow">AGENDA</div>
+              <h2>Reuniões & Meets</h2>
+              <p class="panel-dim" id="agendaStatus">
+                configure suas agendas abaixo para começar
+              </p>
+            </div>
+            <div class="head-actions">
+              <button id="newEventBtn" class="pill">＋ Criar evento</button>
+              <button id="agendaUpdate" class="pill glow big">
+                ⟳ Atualizar agenda
+              </button>
+            </div>
+          </div>
+
+          <div class="month-cal">
+            <div class="month-cal-head">
+              <button id="monthPrev" class="icon-btn" title="mês anterior">
+                ‹
+              </button>
+              <span class="month-label" id="monthLabel">—</span>
+              <button id="monthNext" class="icon-btn" title="próximo mês">
+                ›
+              </button>
+              <button id="monthToday" class="pill">hoje</button>
+            </div>
+            <div class="month-grid-dow">
+              <span>dom</span><span>seg</span><span>ter</span><span>qua</span
+              ><span>qui</span><span>sex</span><span>sáb</span>
+            </div>
+            <div class="month-grid" id="monthGrid"></div>
+          </div>
+
+          <div class="agenda-list" id="agendaList">
+            <div class="col-empty">
+              adicione o endereço iCal secreto de uma agenda em “⚙ minhas
+              agendas”
+            </div>
+          </div>
+
+          <details class="used" id="agendaSettings">
+            <summary>⚙ minhas agendas (contas Google)</summary>
+            <div class="agenda-cfg">
+              <p class="panel-dim cfg-help">
+                No Google Calendar (web):
+                <b
+                  >Configurações → sua agenda → Integrar agenda → “Endereço
+                  secreto em formato iCal”</b
+                >. Copie a URL (.ics) e cole aqui. Repita para cada
+                conta/agenda. Esse endereço é privado — não compartilhe.
+              </p>
+              <div class="cfg-row">
+                <input
+                  type="text"
+                  id="calLabel"
+                  placeholder="rótulo / e-mail (ex: pessoal@gmail.com)"
+                />
+                <input
+                  type="text"
+                  id="calICS"
+                  placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+                />
+                <button id="calAdd" class="pill">adicionar</button>
+              </div>
+              <div id="calList"></div>
+            </div>
+          </details>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ MODAL SOCIAL ============ -->
+    <div class="overlay hidden" id="socOverlay">
+      <div class="modal task-modal">
+        <header class="modal-head">
+          <h2>Registrar números</h2>
+          <button class="icon-btn close" data-close="socOverlay">✕</button>
+        </header>
+        <div class="modal-body">
+          <label class="diary-note-label">usuário do Instagram (sem @)</label>
+          <input type="text" id="socIgUser" placeholder="seuperfil" />
+          <label class="diary-note-label mt">URL do seu perfil LinkedIn</label>
+          <input
+            type="text"
+            id="socLiUser"
+            placeholder="https://www.linkedin.com/in/voce/"
+          />
+          <div class="task-opts mt">
+            <input
+              type="number"
+              id="socIgN"
+              placeholder="seguidores IG"
+              min="0"
+            />
+            <input
+              type="number"
+              id="socLiN"
+              placeholder="conexões LinkedIn"
+              min="0"
+            />
+          </div>
+          <button id="socSave" class="pill glow wide mt">
+            salvar registro de hoje
+          </button>
+          <div id="socHistory" class="soc-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL CRIAR EVENTO ============ -->
+    <div class="overlay hidden" id="eventOverlay">
+      <div class="modal task-modal">
+        <header class="modal-head">
+          <h2>Criar evento</h2>
+          <button class="icon-btn close" data-close="eventOverlay">✕</button>
+        </header>
+        <div class="modal-body">
+          <input type="text" id="evTitle" placeholder="Título do evento" />
+          <div class="task-opts">
+            <input type="date" id="evDate" />
+          </div>
+          <div class="task-opts">
+            <input type="time" id="evStart" value="09:00" />
+            <input type="time" id="evEnd" value="10:00" />
+          </div>
+          <input
+            type="text"
+            id="evGuests"
+            placeholder="convidados (e-mails separados por vírgula)"
+            class="mt"
+          />
+          <input
+            type="text"
+            id="evLocation"
+            placeholder="local ou link (opcional)"
+            class="mt"
+          />
+          <textarea
+            id="evDetails"
+            rows="2"
+            placeholder="descrição (opcional)"
+            class="mt"
+          ></textarea>
+          <label class="diary-note-label mt"
+            >criar com qual conta Google?</label
+          >
+          <select id="evAccount"></select>
+          <button id="evCreate" class="pill glow wide mt">
+            abrir no Google Calendar →
+          </button>
+          <p class="panel-dim" style="margin-top: 10px">
+            Abre o Calendar já preenchido na conta escolhida — é só clicar em
+            “Salvar”.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL DIÁRIO ============ -->
+    <div class="overlay hidden" id="diaryOverlay">
+      <div class="modal">
+        <header class="modal-head">
+          <div>
+            <div class="eyebrow">DIÁRIO DE BORDO</div>
+            <h2>Registro das missões</h2>
+          </div>
+          <button class="icon-btn close" data-close="diaryOverlay">✕</button>
+        </header>
+        <div class="modal-body">
+          <label class="diary-note-label">Nota de hoje</label>
+          <textarea
+            id="diaryNote"
+            rows="3"
+            placeholder="Como foi o dia? Anotações livres…"
+          ></textarea>
+          <div id="diaryHistory"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL NOVA TAREFA ============ -->
+    <div class="overlay hidden" id="taskOverlay">
+      <div class="modal task-modal">
+        <header class="modal-head">
+          <h2 id="taskModalTitle">Nova missão</h2>
+          <button class="icon-btn close" data-close="taskOverlay">✕</button>
+        </header>
+        <div class="modal-body">
+          <input
+            type="text"
+            id="taskTitle"
+            placeholder="O que precisa ser feito?"
+            maxlength="140"
+          />
+          <div class="task-opts">
+            <select id="taskTag">
+              <option value="trabalho">⬢ trabalho</option>
+              <option value="conteudo">✦ conteúdo</option>
+              <option value="carreira">➤ carreira</option>
+              <option value="empresa">◆ empresa</option>
+              <option value="pessoal">☾ pessoal</option>
+            </select>
+            <select id="taskPrio">
+              <option value="normal">prioridade normal</option>
+              <option value="alta">🔥 alta</option>
+              <option value="baixa">baixa</option>
+            </select>
+          </div>
+          <button id="taskSave" class="pill glow wide">
+            adicionar ao quadro
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ LIGHTBOX DE IMAGEM ============ -->
+    <div class="overlay hidden" id="imgOverlay">
+      <div class="lightbox">
+        <img id="lightboxImg" alt="registro do card" />
+        <div class="lightbox-bar">
+          <span id="lightboxCaption"></span>
+          <button id="imgRemove" class="pill danger">🗑 remover imagem</button>
+          <button class="pill" data-close="imgOverlay">fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="imgInput" accept="image/*" hidden />
+
+    <script src="report.js"></script>
+    <script src="radar.js"></script>
+    <script src="calendar.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>
