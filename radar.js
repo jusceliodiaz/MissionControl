@@ -3,15 +3,14 @@
    Busca DADOS REAIS na internet para o Radar IA:
      · Hacker News (hn.algolia.com — API pública, sem chave)
      · Reddit (JSON público)
+     · Remotive + RemoteOK (APIs públicas de vagas remotas)
    Cada fonte falha de forma independente — o radar mostra o que conseguir.
    ===================================================================== */
 
 const RADAR_CATS = {
-  modelos:       { label: "Modelos & IA",       color: "cyan" },
-  ferramentas:   { label: "Ferramentas & 3D",   color: "violet" },
-  mercado:       { label: "Mercado",            color: "amber" },
-  homeassistant: { label: "Home Assistant",     color: "green" },
-  negocios:      { label: "Negócios & Empreendedorismo", color: "red" },
+  mercado:  { label: "Mercado",            color: "amber" },
+  negocios: { label: "Negócios & Empreendedorismo", color: "red" },
+  vagas:    { label: "Vagas",              color: "green" },
 };
 
 /* ------------------- helpers ------------------- */
@@ -72,31 +71,58 @@ async function srcReddit(sub, cat, limit = 8) {
     }));
 }
 
+// Remotive — vagas remotas (API pública)
+async function srcRemotive(search) {
+  const u = "https://remotive.com/api/remote-jobs?limit=20&search=" +
+            encodeURIComponent(search);
+  const data = await jfetch(u);
+  return (data.jobs || []).slice(0, 8).map((j) => mkItem({
+    title: j.title + " · " + j.company_name,
+    url: j.url,
+    source: "Remotive",
+    cat: "vagas",
+    ts: Date.parse(j.publication_date) || Date.now(),
+    extra: j.candidate_required_location || "",
+  }));
+}
+
+// RemoteOK — vagas remotas (API pública)
+async function srcRemoteOK(tag) {
+  const data = await jfetch("https://remoteok.com/api?tag=" + encodeURIComponent(tag));
+  return (Array.isArray(data) ? data : [])
+    .filter((j) => j && j.position)
+    .slice(0, 6)
+    .map((j) => mkItem({
+      title: j.position + " · " + (j.company || ""),
+      url: j.url || ("https://remoteok.com/remote-jobs/" + j.id),
+      source: "RemoteOK",
+      cat: "vagas",
+      ts: Date.parse(j.date) || Date.now(),
+      extra: j.location || "",
+    }));
+}
+
 /* ------------------- orquestração ------------------- */
 
 async function fetchRadar() {
   const plan = [
-    srcHN("AI model", "modelos", 40),
-    srcHN("LLM", "modelos", 40),
-    srcReddit("artificial", "modelos"),
-    srcReddit("LocalLLaMA", "modelos"),
-
-    srcHN("Unreal Engine", "ferramentas", 10),
-    srcHN("3D rendering", "ferramentas", 10),
-    srcReddit("unrealengine", "ferramentas"),
-    srcReddit("vfx", "ferramentas"),
-
     srcHN("AI startup", "mercado", 30),
     srcHN("funding round", "mercado", 30),
     srcReddit("startups", "mercado", 6),
-
-    srcHN("Home Assistant", "homeassistant", 10),
-    srcReddit("homeassistant", "homeassistant"),
 
     srcHN("bootstrapped startup", "negocios", 15),
     srcHN("startup Europe visa", "negocios", 5),
     srcReddit("Entrepreneur", "negocios"),
     srcReddit("smallbusiness", "negocios"),
+
+    srcRemotive("unreal engine"),
+    srcRemotive("3d artist"),
+    srcRemotive("vfx artist"),
+    srcRemotive("houdini"),
+    srcRemotive("realtime"),
+    srcRemotive("ai artist"),
+    srcRemoteOK("3d"),
+    srcRemoteOK("unreal"),
   ];
 
   const settled = await Promise.allSettled(plan);

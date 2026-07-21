@@ -264,6 +264,7 @@ const radarPoints = (it) => {
 function renderOvRadar() {
   const wrap = $("ovRadar");
   const items = visibleRadarItems()
+    .filter((it) => it.cat !== "vagas")
     .sort((a, b) => radarPoints(b) - radarPoints(a))
     .slice(0, 5);
 
@@ -271,9 +272,7 @@ function renderOvRadar() {
     wrap.innerHTML = miniEmpty("radar vazio — abra a aba e clique em ⟳ atualizar");
     return;
   }
-  const catColor = { modelos: "var(--cyan)", ferramentas: "var(--violet)",
-                     mercado: "var(--amber)",
-                     homeassistant: "var(--green)", negocios: "var(--red)" };
+  const catColor = { mercado: "var(--amber)", negocios: "var(--red)" };
   wrap.innerHTML = "";
   for (const it of items) {
     const div = document.createElement("div");

@@ -424,11 +424,9 @@ body::before {
 }
 .rf:hover { border-color: var(--fc, var(--cyan)); color: var(--fc, var(--cyan)); }
 .rf.sel { background: var(--fc, var(--cyan)); border-color: var(--fc, var(--cyan)); color: var(--void); font-weight: 600; }
-.rf[data-cat="modelos"]       { --fc: var(--cyan); }
-.rf[data-cat="ferramentas"]   { --fc: var(--violet); }
-.rf[data-cat="mercado"]       { --fc: var(--amber); }
-.rf[data-cat="homeassistant"] { --fc: var(--green); }
-.rf[data-cat="negocios"]      { --fc: var(--red); }
+.rf[data-cat="mercado"]     { --fc: var(--amber); }
+.rf[data-cat="negocios"]    { --fc: var(--red); }
+.rf[data-cat="vagas"]       { --fc: var(--green); }
 
 .radar-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
 
@@ -440,11 +438,9 @@ body::before {
   animation: card-in .25s ease both;
   display: flex; flex-direction: column; gap: 10px;
 }
-.rcard[data-cat="modelos"]       { --cc: var(--cyan); }
-.rcard[data-cat="ferramentas"]   { --cc: var(--violet); }
-.rcard[data-cat="mercado"]       { --cc: var(--amber); }
-.rcard[data-cat="homeassistant"] { --cc: var(--green); }
-.rcard[data-cat="negocios"]      { --cc: var(--red); }
+.rcard[data-cat="mercado"]     { --cc: var(--amber); }
+.rcard[data-cat="negocios"]    { --cc: var(--red); }
+.rcard[data-cat="vagas"]       { --cc: var(--green); }
 
 .rcard-top { display: flex; align-items: center; gap: 8px; }
 .rcat {
